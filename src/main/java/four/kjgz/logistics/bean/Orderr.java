@@ -1,8 +1,16 @@
 package four.kjgz.logistics.bean;
 
+
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import java.util.Date;
 
-public class Orderr {
+@Entity
+public class orderr {
+    @Id
+    @GeneratedValue
     private Integer id;
     private Integer cid;
     private String sname;
@@ -59,6 +67,7 @@ public class Orderr {
         this.saddress = saddress;
     }
 
+
     public Date getSdate() {
         return sdate;
     }
@@ -90,6 +99,7 @@ public class Orderr {
     public void setRaddress(String raddress) {
         this.raddress = raddress;
     }
+
 
     public Date getRdate() {
         return rdate;

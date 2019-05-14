@@ -1,22 +1,19 @@
 package four.kjgz.logistics.contorll;
 
 import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import four.kjgz.logistics.bean.*;
 import four.kjgz.logistics.mapper.OrderInfMapper;
 import four.kjgz.logistics.mapper.OrderrMapper;
+import four.kjgz.logistics.repository.OrderrReposity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class OrderrController {
@@ -25,6 +22,8 @@ public class OrderrController {
     @Autowired
     private OrderInfMapper orderInfMapper;
     Logger logger = LoggerFactory.getLogger(OrderrController.class);
+    @Autowired
+     OrderrReposity orderrReposity;
     @Value("${IdWorker.workedId}")
     private Integer workId;
 
@@ -40,7 +39,7 @@ public class OrderrController {
     @MyLog(value = "通过编号查找订单")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/selectOrderByNum", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
     public String selectOrderByNum(@RequestParam("num") String num){
-        Orderr orderr = orderrMapper.findByOrdernum(num);
+        orderr orderr = orderrMapper.findByOrdernum(num);
         if(orderr==null)
         {
             logger.error("通过编号查找订单失败");
@@ -101,7 +100,7 @@ public class OrderrController {
      */
     @MyLog(value = "添加订单")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/addOrder", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
-    public String addOrder(Orderr orderr){
+    public String addOrder(orderr orderr){
         //生成订单号
         IdWorker idWorker = new IdWorker(workId,datacenterId);
         String ordernum = String.valueOf(idWorker.nextId());
@@ -134,9 +133,8 @@ public class OrderrController {
      */
     @MyLog(value = "通过的id删除订单")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/delOrder", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
-    public String delOrder(@RequestParam("id") Integer id){
-        int num = orderrMapper.delOrderr(id);
-        if(num==1){
+    public String delOrder(@RequestParam("num") String num){
+        if(orderrReposity.findByOrdernum(num).size()==0){
             logger.error("通过的id删除订单失败");
             JSONObject result = new JSONObject();
             result.put("sts", "0");
@@ -146,7 +144,7 @@ public class OrderrController {
             JSONObject result = new JSONObject();
             result.put("sts", "1");
             result.put("msg", "通过的id删除订单成功");
-            result.put("ourdata", "true");
+            result.put("ourdata", orderrReposity.deleteByOrdernum(num).get(0));
             return result.toJSONString();
         }
     }
@@ -160,7 +158,7 @@ public class OrderrController {
     @MyLog(value = "更新订单")  //这里添加了AOP的自定义注解
     @PostMapping("/updateOrder")
     @RequestMapping(value = "/updateOrder", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
-    public String updateOrder(Orderr orderr){
+    public String updateOrder(orderr orderr){
         int i = orderrMapper.updateOrderr(orderr);
         System.out.println("返回值是："+i);
         if (i == 1){
@@ -187,53 +185,30 @@ public class OrderrController {
      * @param orderInf
      * @return
      */
-    @MyLog(value = "通过编号更新订单的位置")  //这里添加了AOP的自定义注解
+    @MyLog(value = "通过编号更新订单的位置或状态")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/updateOrderLocationByNum", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
-    public String updateOrderLocationByNum(OrderInf orderInf){
-        Orderr orderr = orderrMapper.findByOrdernum(orderInf.getOrdernum());
+    public String updateOrderLocationAndStateByNum(@RequestParam("ordernum") String ordernum,@RequestParam("raddress") String raddress,@RequestParam("status") Integer status){
+        orderr orderr = orderrReposity.findByOrdernum(ordernum).get(0);
         if (orderr == null){
             //订单不存在
-            logger.error("通过编号更新订单的位置失败");
+            logger.error("通过编号更新订单的位置或状态失败");
             JSONObject result = new JSONObject();
             result.put("sts", "0");
-            result.put("msg", "通过编号更新订单的位置失败");
+            result.put("msg", "通过编号更新订单的位置或状态失败");
             return result.toJSONString();
         }else {
-            orderInfMapper.updateOrderLocationByOrdernum(orderInf);
+            four.kjgz.logistics.bean.orderr orderr1 =orderr;
+            orderr1.setRaddress(raddress);
+            orderr1.setStatus(status);
             JSONObject result = new JSONObject();
             result.put("sts", "1");
             result.put("msg", "更新订单成功");
-            result.put("ourdata", "true");
+            result.put("ourdata", orderrReposity.save(orderr1));
             return result.toJSONString();
         }
     }
 
-    /**
-     * 更新订单的状态（完成or未完成）
-     * staff或者admin+登录+update
-     * @param id
-     * @param status
-     * @return
-     */
-    @MyLog(value = "更新订单的状态")  //这里添加了AOP的自定义注解
-    @RequestMapping(value = "/updateOrderStatus", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
-    public String updateOrderStatus(@RequestParam("id") Integer id,@RequestParam("status") Integer status){
-        int i = orderrMapper.updateOrderrStatus(id, status);
-        if (i==0){
-            logger.error("更新订单的状态失败");
-            JSONObject result = new JSONObject();
-            result.put("sts", "0");
-            result.put("msg", "更新订单的状态失败");
-            return result.toJSONString();
-        }else{
-            JSONObject result = new JSONObject();
-            result.put("sts", "1");
-            result.put("msg", "更新订单的状态成功");
-            result.put("ourdata", "true");
-            return result.toJSONString();
 
-        }
-    }
 
     /**
      * 根据寄件人的id查询该人的订单
@@ -244,7 +219,7 @@ public class OrderrController {
     @MyLog(value = "通过寄件人的id查找订单")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/selectOrdersByCid", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
     public String selectOrdersByCid(@RequestParam("cid") Integer cid){
-        List<Orderr> orders = orderrMapper.selectOrdersBySid(cid);
+        List<orderr> orders = orderrMapper.selectOrdersBySid(cid);
         if (orders.size() == 0){
             logger.error("通过寄件人的id查找订单失败");
             JSONObject result = new JSONObject();
@@ -269,9 +244,9 @@ public class OrderrController {
      */
     @MyLog(value = "查找所有的订单")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/selectAll", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
-    public String selectAll(@RequestParam(defaultValue = "1",value = "pageNum") Integer pageNum, @RequestParam("pageSize") Integer pageSize){
+    public String selectAll(@RequestParam(defaultValue = "1",value = "page") Integer pageNum, @RequestParam("limit") Integer pageSize){
         PageHelper.startPage(pageNum,pageSize);
-        List<Orderr> orders = orderrMapper.selectAll();
+        List<orderr> orders = orderrMapper.selectAll();
         if(orders.size()==0)
         {
             JSONObject result = new JSONObject();
@@ -281,14 +256,27 @@ public class OrderrController {
         }
         else
         {
-            PageInfo<Orderr> pageInfo = new PageInfo<Orderr>(orders);
+            PageInfo<orderr> pageInfo = new PageInfo<orderr>(orders);
             JSONObject result = new JSONObject();
             result.put("sts", "1");
-            result.put("msg", "通过寄件人的id查找订单成功");
+            result.put("msg", "查找所有的订单成功");
             result.put("ourdata",pageInfo);
             return result.toJSONString();
         }
 
+    }
+
+    @MyLog(value = "查找所有物流信息")  //这里添加了AOP的自定义注解
+    @PostMapping("/selectAllLogisticsInfo")
+    public PageInfo<OrderInf> selectAllLogisticsInfo(@RequestParam(defaultValue = "1",value = "page") Integer pageNum,@RequestParam(defaultValue = "5",value = "limit") Integer pageSize){
+        PageHelper.startPage(pageNum,pageSize);
+        List<OrderInf> orderInfos = orderInfMapper.selectAll();
+        if (orderInfos.size() == 0){
+            return null;
+        }else {
+            PageInfo<OrderInf> pageInfo = new PageInfo<OrderInf>(orderInfos);
+            return pageInfo;
+        }
     }
 
 

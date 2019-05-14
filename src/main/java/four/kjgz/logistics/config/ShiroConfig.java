@@ -1,10 +1,12 @@
 package four.kjgz.logistics.config;
 
 import four.kjgz.logistics.Realm.MyShiroRealm;
+import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.LifecycleBeanPostProcessor;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,12 +48,7 @@ public class ShiroConfig {
         filterMap.put("/info","anon");
         filterMap.put("/unLogin","anon");
 
-
-
-        //授权过滤器
-//        filterMap.put("/create","perms[user:create]");
-
-       filterMap.put("/**","authc");
+//       filterMap.put("/**","authc");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterMap);
         return shiroFilterFactoryBean;
@@ -78,8 +75,16 @@ public class ShiroConfig {
     {
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
         securityManager.setRealm(myShiroRealm);
+        securityManager.setSessionManager(getSessionManager());
         return  securityManager;
     }
+
+    @Bean
+    public SessionManager getSessionManager() {
+        MySessionManager mySessionManager = new MySessionManager();
+        return mySessionManager;
+    }
+
     /*
     创建Realm
     * */

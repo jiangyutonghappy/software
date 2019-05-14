@@ -2,6 +2,7 @@ package four.kjgz.logistics.contorll;
 
 import com.alibaba.fastjson.JSONObject;
 import four.kjgz.logistics.bean.*;
+import four.kjgz.logistics.mapper.MenuMapper;
 import four.kjgz.logistics.repository.AdministratorsReposity;
 import four.kjgz.logistics.repository.CustomerReposity;
 import four.kjgz.logistics.repository.StaffReposity;
@@ -28,7 +29,10 @@ public class loginControll {
     CustomerReposity customerReposity;
     @Autowired
     StaffReposity staffReposity;
+
     Logger logger = LoggerFactory.getLogger(loginControll.class);
+
+
     @MyLog(value = "用户登录")  //这里添加了AOP的自定义注解
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
     public String login(@RequestParam("num") String num,
@@ -44,6 +48,8 @@ public class loginControll {
             JSONObject result = new JSONObject();
             result.put("sts", "1");
             result.put("msg", "成功");
+            String sessionId = (String) subject.getSession().getId();
+            result.put("sessionId",sessionId);
 
             Object obj = subject.getPrincipal();
             System.out.println(obj);

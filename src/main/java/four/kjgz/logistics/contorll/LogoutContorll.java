@@ -5,11 +5,8 @@ import org.apache.shiro.subject.Subject;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
-
 @RestController
-@RequestMapping(value = "/logout")
-public class LoginoutContorll {
+public class LogoutContorll {
     @RequestMapping(value = "/logout")
     public String logout(){
         Subject subject = SecurityUtils.getSubject();

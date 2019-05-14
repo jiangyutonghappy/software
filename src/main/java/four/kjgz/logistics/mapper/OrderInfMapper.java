@@ -15,4 +15,7 @@ public interface OrderInfMapper {
 
     @Select("select * from OrderInf where sid = #{sid} order by id DESC")
     public List<OrderInf> findOrderBySid(Integer sid);
+
+    @Select("select * from OrderInf")
+    public List<OrderInf> selectAll();
 }
